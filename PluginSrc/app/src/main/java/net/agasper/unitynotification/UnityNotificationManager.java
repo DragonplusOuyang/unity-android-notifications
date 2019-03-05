@@ -157,23 +157,12 @@ public class UnityNotificationManager extends BroadcastReceiver
 
         Resources res = context.getResources();
 
-        Intent notificationIntent = context.getPackageManager().getLaunchIntentForPackage(bundle);
-
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-        stackBuilder.addNextIntent(notificationIntent);
-
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0,
-                notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
         if (channel == null)
             channel = "default";
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channel);
 
-        builder.setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .setContentTitle(title)
-                .setContentText(message);
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
             builder.setColor(color);
@@ -204,26 +193,43 @@ public class UnityNotificationManager extends BroadcastReceiver
             builder.setLights(Color.GREEN, 3000, 3000);
 
         if (actions != null) {
-            for (int i = 0; i < actions.size(); i++) {
-                NotificationAction action = actions.get(i);
-                int icon = 0;
-                if (action.getIcon() != null && action.getIcon().length() > 0)
-                    icon = res.getIdentifier(action.getIcon(), "drawable", context.getPackageName());
-                builder.addAction(icon, action.getTitle(), buildActionIntent(action, i, context));
-            }
+//            for (int i = 0; i < actions.size(); i++) {
+//                NotificationAction action = actions.get(i);
+//                int icon = 0;
+//                if (action.getIcon() != null && action.getIcon().length() > 0)
+//                    icon = res.getIdentifier(action.getIcon(), "drawable", context.getPackageName());
+//                builder.addAction(icon, action.getTitle(), buildActionIntent(action, i, context));
+//            }
+            PendingIntent pendingIntent =  buildActionIntent(actions.get(0), 0, context, bundle );
+            builder.setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .setContentTitle(title)
+                    .setContentText(message);
+        }else{
+            Intent notificationIntent = context.getPackageManager().getLaunchIntentForPackage(bundle);
+
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+            stackBuilder.addNextIntent(notificationIntent);
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0,
+                notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .setContentTitle(title)
+                    .setContentText(message);
         }
 
         Notification notification = builder.build();
         notificationManager.notify(id, notification);
     }
 
-    private static PendingIntent buildActionIntent(NotificationAction action, int id,Context context) {
+    private static PendingIntent buildActionIntent(NotificationAction action, int id,Context context,String bundle ) {
         Intent intent = new Intent(context, UnityNotificationActionHandler.class);
         intent.putExtra("id", id);
         intent.putExtra("gameObject", action.getGameObject());
         intent.putExtra("handlerMethod", action.getHandlerMethod());
         intent.putExtra("actionId", action.getIdentifier());
         intent.putExtra("foreground", action.isForeground());
+        intent.putExtra("bundle", bundle );
         return PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
