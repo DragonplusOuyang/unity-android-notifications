@@ -2,12 +2,14 @@ package net.agasper.unitynotification;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -27,6 +29,7 @@ import com.unity3d.player.UnityPlayer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class UnityNotificationManager extends BroadcastReceiver
@@ -219,6 +222,7 @@ public class UnityNotificationManager extends BroadcastReceiver
         }
 
         Notification notification = builder.build();
+        if(!isApplicationBroughtToBackground(context))
         notificationManager.notify(id, notification);
     }
 
@@ -248,4 +252,26 @@ public class UnityNotificationManager extends BroadcastReceiver
         NotificationManager nm = (NotificationManager)currentActivity.getSystemService(Context.NOTIFICATION_SERVICE);
         nm.cancelAll();
     }
+
+
+    /**
+     * *判断当前应用程序处于前台还是后台 true 前台，false 后台。
+      */
+    public static boolean isApplicationBroughtToBackground(final Context context) {
+        try {
+            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
+            if (!tasks.isEmpty()) {
+                ComponentName topActivity = tasks.get(0).topActivity;
+                if (!topActivity.getPackageName().equals(context.getPackageName())) {
+                    return true;
+                }
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+            return false;
+        }
+        return false;
+    }
+
 }
